@@ -9,30 +9,47 @@
 // 2017-10-05 v0.01   First cut of code
 // 2017-10-16 v1.00   Corrected quote addition flag to properly update 'new' count
 // 2017-10-16 v1.01   Return array containing whether quote/author added and message from insertQuote
+// 2017-11-17 v1.02   Add Author / Quote totals to app messaging
 //
 
     set_include_path("<LIB GOES HERE>");
     require_once("dbquote.php");
     require_once("common.php");
 
-    $version  = "v1.01";
+    $version  = "v1.02";
     $wrksp    = "<WRKSPACE DIR GOES HERE>";
     $filename = $wrksp."/quote_import.csv";
     $debug    = TRUE;
+
+    function getRecordCountFromTable($mysqli, $table) {
+        $total = 0;
+        if ($stmt = $mysqli->prepare("SELECT COUNT(*) AS total FROM ".$table)) {
+            $stmt->execute();
+            $stmt->bind_result($total);
+            $stmt->fetch();
+            $stmt->close();
+        } else {
+            throw new Exception("Unable to prepare SELECT in getRecordCountFromTable() for ".$table);
+        }
+        return $total;
+    }
+
+    function getTotalAuthorCount($mysqli) {
+        return getRecordCountFromTable($mysqli, "author");
+    }
+
+    function getTotalQuoteCount($mysqli) {
+        return getRecordCountFromTable($mysqli, "quote");
+    }
 
     function insertQuote($mysqli, $author, $quote) {
         $added      = 0;
         $result     = 0;
         $messageStr = "";
-        /* create a prepared statement */
         if ($stmt = $mysqli->prepare("SELECT addquote(?, ?) AS result")) {
-            /* bind parameters for markers */
             $stmt->bind_param("ss", $author, $quote);
-            /* execute query */
             $stmt->execute();
-            /* bind result variables */
             $stmt->bind_result($result);
-            /* fetch value */
             $stmt->fetch();
             switch ($result) {
                 case 0:
@@ -88,6 +105,8 @@
                 debugMessage($messageStr);
                 $row++;
             }
+            $messageStr = "Database now contains ".getTotalAuthorCount($server)." authors, with ".getTotalQuoteCount($server)." quotes...";
+            debugMessage($messageStr);
             fclose($handle);
         }
         debugMessage("Completed processing upload file, added ".$new." quotes to the system...");
