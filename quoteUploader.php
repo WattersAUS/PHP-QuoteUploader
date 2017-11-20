@@ -10,13 +10,14 @@
 // 2017-10-16 v1.00   Corrected quote addition flag to properly update 'new' count
 // 2017-10-16 v1.01   Return array containing whether quote/author added and message from insertQuote
 // 2017-11-17 v1.02   Add Author / Quote totals to app messaging
+// 2017-11-20 v1.03   Adjust Message from insertQuote (too many periods)
 //
 
     set_include_path("<LIB GOES HERE>");
     require_once("dbquote.php");
     require_once("common.php");
 
-    $version  = "v1.02";
+    $version  = "v1.03";
     $wrksp    = "<WRKSPACE DIR GOES HERE>";
     $filename = $wrksp."/quote_import.csv";
     $debug    = TRUE;
@@ -53,14 +54,14 @@
             $stmt->fetch();
             switch ($result) {
                 case 0:
-                    $messageStr = "Author and Quote already in the database...";
+                    $messageStr = "Author and Quote already in the database";
                     break;
                 case 1:
-                    $messageStr = "Quote added to database, Author already exists...";
+                    $messageStr = "Quote added to database, Author already exists";
                     $added = 1;
                     break;
                 case 3:
-                    $messageStr = "Quote and Author added to the database...";
+                    $messageStr = "Quote and Author added to the database";
                     $added = 1;
                     break;
                 default:
