@@ -1,33 +1,28 @@
 <?php
 //
-// Program: quoteUploader.php (2017-10-05) G.J. Watson
-//
-// Purpose: upload quotes supplied in a CSV file formatted <author>,<quote>
-//
-// Date       Version Note
-// ========== ======= ====================================================
-// 2017-10-05 v0.01   First cut of code
-// 2017-10-16 v1.00   Corrected quote addition flag to properly update 'new' count
-// 2017-10-16 v1.01   Return array containing whether quote/author added and message from insertQuote
-// 2017-11-17 v1.02   Add Author / Quote totals to app messaging
-// 2017-11-20 v1.03   Adjust Message from insertQuote (too many periods)
+//  Program: quoteUploader.php - G.J. Watson
+//     Desc: upload quotes supplied in a CSV file formatted <author>,<quote>
+//  Version: 1.04
 //
 
-    set_include_path("<LIB GOES HERE>");
-    require_once("dbquote.php");
-    require_once("common.php");
+    set_include_path("/var/sites/s/shiny-ideas.tech/lib");
+    require_once("Common.php");
 
-    $version  = "v1.03";
-    $wrksp    = "<WRKSPACE DIR GOES HERE>";
+    $version  = "v1.04";
+    $wrksp    = "/var/sites/s/shiny-ideas.tech/WorkSpace/";
     $filename = $wrksp."/quote_import.csv";
     $debug    = TRUE;
 
     function getRecordCountFromTable($mysqli, $table) {
         $total = 0;
         if ($stmt = $mysqli->prepare("SELECT COUNT(*) AS total FROM ".$table)) {
+            /* execute query */
             $stmt->execute();
+            /* bind result variables */
             $stmt->bind_result($total);
+            /* fetch value */
             $stmt->fetch();
+            /* close statement */
             $stmt->close();
         } else {
             throw new Exception("Unable to prepare SELECT in getRecordCountFromTable() for ".$table);
@@ -47,10 +42,15 @@
         $added      = 0;
         $result     = 0;
         $messageStr = "";
+        /* create a prepared statement */
         if ($stmt = $mysqli->prepare("SELECT addquote(?, ?) AS result")) {
+            /* bind parameters for markers */
             $stmt->bind_param("ss", $author, $quote);
+            /* execute query */
             $stmt->execute();
+            /* bind result variables */
             $stmt->bind_result($result);
+            /* fetch value */
             $stmt->fetch();
             switch ($result) {
                 case 0:
@@ -75,13 +75,19 @@
         return array($added, $messageStr);
     }
 
+    $database = "";
+    $username = "";
+    $password = "";
+    $hostname = "";
+
+    $common = new Common();
     try {
-        debugMessage("Commencing ".basename(__FILE__)." ".$GLOBALS['version']."...");
-        $server = new mysqli($GLOBALS['hostname'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['database']);
+        $common->printINFOMessage("Commencing ".basename(__FILE__)." ".$GLOBALS['version']."...");
+        $server = new mysqli($hostname, $username, $password, $database);
         if ($server->connect_errno) {
             throw new Exception("Unable to retrieve information from the database");
         }
-        debugMessage("Connected to host (".$server->host_info.")...");
+        $common->printINFOMessage("Connected to host (".$server->host_info.")...");
         //
         // check we have an import file
         //
@@ -91,7 +97,7 @@
         $row = 1;
         $new = 0;
         if (($handle = fopen($filename, "r")) !== FALSE) {
-            debugMessage("Opened quote upload file ".$filename." ready to import...");
+            $common->printINFOMessage("Opened quote upload file ".$filename." ready to import...");
             while (($data = fgetcsv($handle, 1024, ",")) !== FALSE) {
                 $messageStr = "";
                 if (count($data) !== 2) {
@@ -103,17 +109,17 @@
                     $messageStr = "Line ".$row." contains quote for '".$author."', ".$results[1]."...";
                     $new += $results[0];
                 }
-                debugMessage($messageStr);
+                $common->printINFOMessage($messageStr);
                 $row++;
             }
             $messageStr = "Database now contains ".getTotalAuthorCount($server)." authors, with ".getTotalQuoteCount($server)." quotes...";
-            debugMessage($messageStr);
+            $common->printINFOMessage($messageStr);
             fclose($handle);
         }
-        debugMessage("Completed processing upload file, added ".$new." quotes to the system...");
+        $common->printINFOMessage("Completed processing upload file, added ".$new." quotes to the system...");
         $server->close();
     } catch (Exception $e) {
-        debugMessage("ERROR: ".$e->getMessage());
+        $common->printERRORMessage($e->getMessage());
     }
     exit();
 ?>
