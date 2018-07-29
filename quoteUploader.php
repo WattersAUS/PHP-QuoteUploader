@@ -2,14 +2,15 @@
 //
 //  Program: quoteUploader.php - G.J. Watson
 //     Desc: upload quotes supplied in a CSV file formatted <author>,<quote>
-//  Version: 1.04
+//  Version: 1.05
 //
 
-    set_include_path("/var/sites/s/shiny-ideas.tech/lib");
+    set_include_path("<<LIBPATHGOESHERE>>");
     require_once("Common.php");
+    require_once("connect/Quotes.php");
 
-    $version  = "v1.04";
-    $wrksp    = "/var/sites/s/shiny-ideas.tech/WorkSpace/";
+    $version  = "v1.05";
+    $wrksp    = "<<WORKSPACEPATHGOESHERE>>";
     $filename = $wrksp."/quote_import.csv";
     $debug    = TRUE;
 
@@ -43,7 +44,7 @@
         $result     = 0;
         $messageStr = "";
         /* create a prepared statement */
-        if ($stmt = $mysqli->prepare("SELECT addquote(?, ?) AS result")) {
+        if ($stmt = $mysqli->prepare("SELECT newquote(?, ?) AS result")) {
             /* bind parameters for markers */
             $stmt->bind_param("ss", $author, $quote);
             /* execute query */
@@ -64,6 +65,10 @@
                     $messageStr = "Quote and Author added to the database";
                     $added = 1;
                     break;
+                case 5:
+                    $messageStr = "Alias Author added to the database";
+                    $added = 1;
+                    break;
                 default:
                     throw new Exception("Unknown status returned from addquote database function");
             }
@@ -74,11 +79,6 @@
         }
         return array($added, $messageStr);
     }
-
-    $database = "";
-    $username = "";
-    $password = "";
-    $hostname = "";
 
     $common = new Common();
     try {
